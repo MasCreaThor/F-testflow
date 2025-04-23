@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AuthLayout from '@/components/layout/AuthLayout/AuthLayout';
 import ResetPasswordForm from '@/components/auth/ResetPasswordForm/ResetPasswordForm';
@@ -8,11 +8,20 @@ import Card from '@/components/ui/Card/Card';
 import Link from 'next/link';
 
 /**
- * Reset password page
+ * Reset password page - Procesando token desde URL
  */
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  
+  // Registrar información de depuración si se recibe un token
+  useEffect(() => {
+    if (token) {
+      console.log('Token de restablecimiento recibido en URL');
+    } else {
+      console.log('No se encontró token en los parámetros de URL');
+    }
+  }, [token]);
   
   // Check if token exists in URL
   if (!token) {

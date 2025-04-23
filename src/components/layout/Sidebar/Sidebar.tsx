@@ -108,7 +108,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               className="flex items-center space-x-2"
               onClick={handleNavigation}
             >
-              
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">😎</span>
+                </div>
+              </div>
               {!isCollapsed && (
                 <span className="text-xl font-semibold text-gray-900 dark:text-white">
                   Estudiante

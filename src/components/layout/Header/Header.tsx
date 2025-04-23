@@ -32,6 +32,8 @@ const Header: React.FC = () => {
   // Navigation items
   const navItems = [
     { name: 'Inicio', href: '/', public: true },
+    { name: 'Dashboard', href: '/dashboard', public: false },
+    { name: 'Objetivos de Estudio', href: '/study-goals', public: false },
   ];
   
   // Filter navigation items based on authentication status

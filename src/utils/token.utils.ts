@@ -1,3 +1,4 @@
+// src/utils/token.utils.ts
 import Cookies from 'js-cookie';
 import { TokenPayload } from '@/types/auth.types';
 
@@ -14,39 +15,87 @@ const COOKIE_OPTIONS = {
 };
 
 /**
- * Store tokens in cookies (httpOnly for better security in production)
+ * Store tokens in cookies and localStorage for redundancy
  */
 export const setTokens = (accessToken: string, refreshToken?: string): void => {
-  Cookies.set(ACCESS_TOKEN_KEY, accessToken, COOKIE_OPTIONS);
+  console.log('Guardando tokens en cookies y localStorage');
   
-  if (refreshToken) {
-    Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
-      ...COOKIE_OPTIONS,
-      expires: 30 // 30 days for refresh token
-    });
+  // Almacenar en cookies
+  try {
+    Cookies.set(ACCESS_TOKEN_KEY, accessToken, COOKIE_OPTIONS);
+    
+    if (refreshToken) {
+      Cookies.set(REFRESH_TOKEN_KEY, refreshToken, {
+        ...COOKIE_OPTIONS,
+        expires: 30 // 30 days for refresh token
+      });
+    }
+    console.log('Tokens guardados en cookies');
+  } catch (error) {
+    console.error('Error al guardar tokens en cookies:', error);
+  }
+  
+  // Almacenar también en localStorage como respaldo
+  try {
+    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
+    console.log('Tokens guardados en localStorage');
+  } catch (error) {
+    console.error('Error al guardar tokens en localStorage:', error);
   }
 };
 
 /**
- * Get access token from cookie
+ * Get access token from cookie or localStorage
  */
 export const getAccessToken = (): string | undefined => {
-  return Cookies.get(ACCESS_TOKEN_KEY);
+  // Intentar obtener de cookies primero
+  let token = Cookies.get(ACCESS_TOKEN_KEY);
+  
+  // Si no está en cookies, intentar localStorage
+  if (!token) {
+    token = localStorage.getItem(ACCESS_TOKEN_KEY) || undefined;
+  }
+  
+  return token;
 };
 
 /**
- * Get refresh token from cookie
+ * Get refresh token from cookie or localStorage
  */
 export const getRefreshToken = (): string | undefined => {
-  return Cookies.get(REFRESH_TOKEN_KEY);
+  // Intentar obtener de cookies primero
+  let token = Cookies.get(REFRESH_TOKEN_KEY);
+  
+  // Si no está en cookies, intentar localStorage
+  if (!token) {
+    token = localStorage.getItem(REFRESH_TOKEN_KEY) || undefined;
+  }
+  
+  return token;
 };
 
 /**
- * Remove all tokens from cookies
+ * Remove all tokens from cookies and localStorage
  */
 export const removeTokens = (): void => {
-  Cookies.remove(ACCESS_TOKEN_KEY, { path: '/' });
-  Cookies.remove(REFRESH_TOKEN_KEY, { path: '/' });
+  // Eliminar de cookies
+  try {
+    Cookies.remove(ACCESS_TOKEN_KEY, { path: '/' });
+    Cookies.remove(REFRESH_TOKEN_KEY, { path: '/' });
+  } catch (error) {
+    console.error('Error al eliminar tokens de cookies:', error);
+  }
+  
+  // Eliminar de localStorage
+  try {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.error('Error al eliminar tokens de localStorage:', error);
+  }
 };
 
 /**

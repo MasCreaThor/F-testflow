@@ -1,3 +1,4 @@
+// src/services/api.ts - Versión corregida
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { getAccessToken, getRefreshToken, setTokens, removeTokens } from '@/utils/token.utils';
 import { RefreshTokenRequest, AuthResponse } from '@/types/auth.types';
@@ -10,9 +11,10 @@ const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json', // Añadido explícitamente header de aceptación
   },
-  // Timeout después de 10 segundos
-  timeout: 10000,
+  // Timeout después de 15 segundos (aumentado para dar más tiempo)
+  timeout: 15000,
 });
 
 // Request interceptor for adding auth token
@@ -26,7 +28,7 @@ api.interceptors.request.use(
     }
     
     // Registrar la solicitud para depuración
-    console.log(`Realizando solicitud a: ${config.url}`);
+    console.log(`Realizando solicitud a: ${config.url}`, config);
     
     return config;
   },
@@ -41,7 +43,14 @@ api.interceptors.response.use(
   // Manejador de respuestas exitosas
   (response: AxiosResponse) => {
     // Registrar la respuesta para depuración
-    console.log(`Respuesta recibida de: ${response.config.url}`);
+    console.log(`Respuesta recibida de: ${response.config.url}`, response.data);
+    
+    // Verificar que la respuesta tenga datos
+    if (!response.data) {
+      console.error('Respuesta sin datos:', response);
+      throw new Error('Respuesta sin datos del servidor');
+    }
+    
     return response;
   },
   // Manejador de errores
@@ -56,6 +65,11 @@ api.interceptors.response.use(
     
     // Registrar el error para depuración
     console.error(`Error en la solicitud a: ${originalRequest.url}`, error);
+    
+    // Verificar si la respuesta contiene un mensaje de error del servidor
+    if (error.response?.data) {
+      console.error('Mensaje de error del servidor:', error.response.data);
+    }
     
     // Si error es 401 y no already retrying y tenemos refresh token
     if (
@@ -84,11 +98,20 @@ api.interceptors.response.use(
         // Llamar al endpoint de refresh directamente (sin usar la instancia interceptada)
         const response = await axios.post<AuthResponse>(
           `${API_URL}/auth/refresh-token`,
-          refreshRequest
+          refreshRequest,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            }
+          }
         );
         
+        // Registrar respuesta completa para depuración
+        console.log('Respuesta completa de refresh token:', response);
+        
         // Verificar si la respuesta contiene los datos necesarios
-        if (!response.data.accessToken) {
+        if (!response.data || !response.data.accessToken) {
           console.error('Respuesta de refresh inválida:', response.data);
           throw new Error('Invalid refresh response');
         }

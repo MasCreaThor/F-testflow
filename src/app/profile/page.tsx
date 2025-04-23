@@ -46,24 +46,52 @@ export default function ProfilePage() {
   // Fetch user profile
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!user?._id) return;
-
+      if (!user?._id) {
+        console.log('No hay ID de usuario disponible:', user);
+        return;
+      }
+  
+      console.log('=== INICIO FETCHPROFILE ===');
+      console.log('Intentando obtener perfil para usuario:', user._id);
+      
       try {
-        const data = await PeopleService.getPeopleByUserId(user._id);
-        setProfile(data);
+        setLoading(true);
         
-        // Pre-fill form with current values
-        setValue('firstName', data.firstName);
-        setValue('lastName', data.lastName);
-        setValue('profileImage', data.profileImage || '');
+        // Verificar token
+        const token = localStorage.getItem('accessToken');
+        console.log('Token disponible:', !!token);
+        
+        const data = await PeopleService.getPeopleByUserId(user._id);
+        console.log('Datos de perfil recibidos:', data);
+        
+        if (data) {
+          console.log('Estableciendo perfil en el estado:', data);
+          setProfile(data);
+          
+          // Pre-rellenar formulario con los valores actuales
+          console.log('Pre-rellenando formulario con:', {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            profileImage: data.profileImage || '',
+          });
+          
+          setValue('firstName', data.firstName);
+          setValue('lastName', data.lastName);
+          setValue('profileImage', data.profileImage || '');
+        } else {
+          console.error('No se recibieron datos de perfil');
+          setError('No se pudo cargar la información del perfil');
+        }
       } catch (err: any) {
-        console.error('Error fetching profile:', err);
-        setError('No se pudo cargar el perfil. Por favor, inténtalo de nuevo más tarde.');
+        console.error('Error al obtener perfil:', err);
+        console.error('Mensaje de error:', err.message);
+        setError(err.message || 'No se pudo cargar el perfil. Por favor, inténtalo de nuevo más tarde.');
       } finally {
         setLoading(false);
+        console.log('=== FIN FETCHPROFILE ===');
       }
     };
-
+  
     fetchProfile();
   }, [user, setValue]);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,7 +17,7 @@ interface SidebarProps {
 }
 
 /**
- * Sidebar component for dashboard layout
+ * Sidebar component for dashboard layout with collapsible functionality
  */
 const Sidebar: React.FC<SidebarProps> = ({ 
   isMobile = false,
@@ -25,8 +25,30 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   
-  // Navigation items
+  // Check local storage for saved collapse state on component mount
+  useEffect(() => {
+    if (!isMobile) { // Only for desktop
+      const savedCollapseState = localStorage.getItem('sidebarCollapsed');
+      if (savedCollapseState !== null) {
+        setIsCollapsed(savedCollapseState === 'true');
+      }
+    }
+  }, [isMobile]);
+  
+  // Save collapse state to local storage
+  const toggleSidebar = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    
+    // Save to local storage
+    if (!isMobile) {
+      localStorage.setItem('sidebarCollapsed', String(newState));
+    }
+  };
+  
+  // Navigation items with icons and labels
   const navigation = [
     {
       name: 'Dashboard',
@@ -72,28 +94,59 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
   
   return (
-    <div className={`bg-white dark:bg-gray-900 h-full ${isMobile ? 'w-full' : 'w-64'}`}>
+    <div 
+      className={`bg-white dark:bg-gray-900 h-full transition-all duration-300 ${
+        isMobile ? 'w-full' : isCollapsed ? 'w-16' : 'w-64'
+      }`}
+    >
       <div className="flex flex-col h-full">
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-          <Link 
-            href="/" 
-            className="flex items-center space-x-2"
-            onClick={handleNavigation}
-          >
-            <div className="flex-shrink-0">
+        {/* Sidebar Header with Toggle Button */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
+          {!isCollapsed && (
+            <Link 
+              href="/" 
+              className="flex items-center space-x-2"
+              onClick={handleNavigation}
+            >
+              
+              {!isCollapsed && (
+                <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Estudiante
+                </span>
+              )}
+            </Link>
+          )}
+          
+          {isCollapsed && (
+            <div className="mx-auto">
               <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
                 <span className="text-white font-bold text-lg">TF</span>
               </div>
             </div>
-            <span className="text-xl font-semibold text-gray-900 dark:text-white">
-              TestFlow
-            </span>
-          </Link>
+          )}
+          
+          {/* Toggle Button - Only visible on desktop */}
+          {!isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none"
+              aria-label={isCollapsed ? "Expandir menú" : "Contraer menú"}
+            >
+              {isCollapsed ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+          )}
         </div>
         
         {/* Sidebar Navigation */}
-        <nav className="flex-1 px-2 py-4">
+        <nav className="flex-1 px-2 py-4 overflow-y-auto">
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
@@ -102,17 +155,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} px-3 py-2 text-sm font-medium rounded-md ${
                     isActive
                       ? 'bg-primary-500 text-white'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                   onClick={handleNavigation}
+                  title={isCollapsed ? item.name : undefined}
                 >
-                  <span className={`mr-3 ${isActive ? 'text-white' : ''}`}>
+                  <span className={`${isActive ? 'text-white' : ''} ${isCollapsed ? '' : 'mr-3'}`}>
                     {item.icon}
                   </span>
-                  {item.name}
+                  {!isCollapsed && item.name}
                 </Link>
               );
             })}
@@ -123,19 +177,43 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="px-2 py-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+            className={`flex ${isCollapsed ? 'justify-center w-full' : 'items-center px-3 py-2'} text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md`}
+            title={isCollapsed ? "Cerrar Sesión" : undefined}
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 mr-3" 
+              className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'}`}
               viewBox="0 0 20 20" 
               fill="currentColor"
             >
-              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7.414l-4-4H3zm9 3a1 1 0 00-1-1H4V4h7v2zm0 3a1 1 0 01-1 1H4v1h7V9zm-1 3a1 1 0 001-1H4v1h7z" clipRule="evenodd" />
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7.414l-4-4H3zm7 7V4h3v6h-3z" clipRule="evenodd" />
             </svg>
-            Cerrar Sesión
+            {!isCollapsed && "Cerrar Sesión"}
           </button>
         </div>
+        
+        {/* Collapse Toggle Button - Fixed at Bottom for Easy Access */}
+        {!isMobile && (
+          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+            <button 
+              onClick={toggleSidebar}
+              className="flex items-center justify-center w-full text-sm text-gray-500 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+            >
+              {isCollapsed ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Contraer menú</span>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

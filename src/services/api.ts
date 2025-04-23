@@ -11,29 +11,53 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Timeout después de 10 segundos
+  timeout: 10000,
 });
 
 // Request interceptor for adding auth token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    // Obtener el token de acceso
     const token = getAccessToken();
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // Registrar la solicitud para depuración
+    console.log(`Realizando solicitud a: ${config.url}`);
+    
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('Error en la configuración de la solicitud:', error);
+    return Promise.reject(error);
+  }
 );
 
 // Response interceptor for handling token expiration
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  // Manejador de respuestas exitosas
+  (response: AxiosResponse) => {
+    // Registrar la respuesta para depuración
+    console.log(`Respuesta recibida de: ${response.config.url}`);
+    return response;
+  },
+  // Manejador de errores
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     
-    // If error is 401 and not already retrying and have refresh token
+    // Verificar si la solicitud no está definida
+    if (!originalRequest) {
+      console.error('Error de solicitud no definida:', error);
+      return Promise.reject(error);
+    }
+    
+    // Registrar el error para depuración
+    console.error(`Error en la solicitud a: ${originalRequest.url}`, error);
+    
+    // Si error es 401 y no already retrying y tenemos refresh token
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -42,34 +66,48 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        // Try to refresh the token
+        console.log('Intentando refrescar el token...');
+        
+        // Obtener el refresh token
         const refreshToken = getRefreshToken();
         
         if (!refreshToken) {
+          console.error('No hay refresh token disponible');
           throw new Error('No refresh token available');
         }
         
+        // Crear el objeto de solicitud de refresh
         const refreshRequest: RefreshTokenRequest = {
           refreshToken
         };
         
-        // Call refresh token endpoint directly (not using intercepted instance)
+        // Llamar al endpoint de refresh directamente (sin usar la instancia interceptada)
         const response = await axios.post<AuthResponse>(
           `${API_URL}/auth/refresh-token`,
           refreshRequest
         );
         
-        // Store new tokens
+        // Verificar si la respuesta contiene los datos necesarios
+        if (!response.data.accessToken) {
+          console.error('Respuesta de refresh inválida:', response.data);
+          throw new Error('Invalid refresh response');
+        }
+        
+        console.log('Token refrescado exitosamente');
+        
+        // Almacenar los nuevos tokens
         const { accessToken, refreshToken: newRefreshToken } = response.data;
         setTokens(accessToken, newRefreshToken);
         
-        // Retry original request with new token
+        // Reintentar la solicitud original con el nuevo token
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         }
         return axios(originalRequest);
       } catch (refreshError) {
-        // If refresh failed, clear tokens and let the app handle redirection to login
+        console.error('Error al refrescar el token:', refreshError);
+        
+        // Si falla el refresh, limpiar tokens y dejar que la app maneje la redirección al login
         removeTokens();
         return Promise.reject(refreshError);
       }

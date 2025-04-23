@@ -71,14 +71,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       const response = await AuthService.login(data);
-      setUser({
-        _id: response.user._id,
-        email: response.user.email,
-      });
-      router.push('/dashboard');
+      
+      // Verificar que la respuesta tiene la estructura esperada
+      if (response && response.user && response.user._id) {
+        setUser({
+          _id: response.user._id,
+          email: response.user.email,
+        });
+        router.push('/dashboard');
+      } else {
+        // Si la respuesta no tiene la estructura esperada, establecer un error
+        console.error('Respuesta inesperada del servidor:', response);
+        setError('Error en la respuesta del servidor');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al iniciar sesión');
-      console.error('Login error:', err);
+      console.error('Login error details:', err);
+      
+      // Manejo mejorado de errores
+      if (err.response) {
+        // El servidor respondió con un código de estado fuera del rango de 2xx
+        const serverError = err.response.data?.message || 'Error en el servidor';
+        setError(serverError);
+        console.error('Error de respuesta del servidor:', err.response.data);
+      } else if (err.request) {
+        // La solicitud se hizo pero no se recibió respuesta
+        setError('No se pudo conectar con el servidor');
+        console.error('No se recibió respuesta:', err.request);
+      } else {
+        // Algo sucedió al configurar la solicitud que desencadenó un error
+        setError(err.message || 'Error al iniciar sesión');
+        console.error('Error al configurar la solicitud:', err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -93,14 +116,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       const response = await AuthService.register(data);
-      setUser({
-        _id: response.user._id,
-        email: response.user.email,
-      });
-      router.push('/dashboard');
+      
+      // Verificar que la respuesta tiene la estructura esperada
+      if (response && response.user && response.user._id) {
+        setUser({
+          _id: response.user._id,
+          email: response.user.email,
+        });
+        router.push('/dashboard');
+      } else {
+        // Si la respuesta no tiene la estructura esperada, establecer un error
+        console.error('Respuesta inesperada del servidor:', response);
+        setError('Error en la respuesta del servidor');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al registrarse');
-      console.error('Register error:', err);
+      console.error('Register error details:', err);
+      
+      // Manejo mejorado de errores
+      if (err.response) {
+        // El servidor respondió con un código de estado fuera del rango de 2xx
+        const serverError = err.response.data?.message || 'Error en el servidor';
+        setError(serverError);
+        console.error('Error de respuesta del servidor:', err.response.data);
+      } else if (err.request) {
+        // La solicitud se hizo pero no se recibió respuesta
+        setError('No se pudo conectar con el servidor');
+        console.error('No se recibió respuesta:', err.request);
+      } else {
+        // Algo sucedió al configurar la solicitud que desencadenó un error
+        setError(err.message || 'Error al registrarse');
+        console.error('Error al configurar la solicitud:', err.message);
+      }
     } finally {
       setLoading(false);
     }

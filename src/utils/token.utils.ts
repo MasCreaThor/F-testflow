@@ -62,7 +62,22 @@ export const isAuthenticated = (): boolean => {
  */
 export const parseToken = (token: string): TokenPayload | null => {
   try {
-    const base64Url = token.split('.')[1];
+    // Verificar que el token existe y tiene formato válido
+    if (!token || typeof token !== 'string') {
+      return null;
+    }
+    
+    // Dividir el token y verificar que tiene al menos 3 partes
+    const parts = token.split('.');
+    if (parts.length < 3) {
+      return null;
+    }
+    
+    const base64Url = parts[1];
+    if (!base64Url) {
+      return null;
+    }
+    
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
       atob(base64)
@@ -81,6 +96,9 @@ export const parseToken = (token: string): TokenPayload | null => {
  * Check if token is expired
  */
 export const isTokenExpired = (token: string): boolean => {
+  // Si no hay token, considerar expirado
+  if (!token) return true;
+  
   const payload = parseToken(token);
   if (!payload) return true;
   

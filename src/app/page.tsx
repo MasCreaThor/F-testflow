@@ -1,12 +1,17 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout/MainLayout';
 import Button from '@/components/ui/Button/Button';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Home page - Landing page for the application
  */
 export default function HomePage() {
+  const { isLoggedIn } = useAuth();
+
   return (
     <MainLayout>
       {/* Hero Section */}
@@ -22,20 +27,32 @@ export default function HomePage() {
               permitiendo a los usuarios establecer objetivos de estudio y seguir su progreso.
             </p>
             <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-              <div className="rounded-md shadow">
-                <Link href="/auth/register">
-                  <Button size="lg" className="w-full">
-                    Comenzar ahora
-                  </Button>
-                </Link>
-              </div>
-              <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
-                <Link href="/auth/login">
-                  <Button variant="outline" size="lg" className="w-full">
-                    Iniciar sesión
-                  </Button>
-                </Link>
-              </div>
+              {!isLoggedIn ? (
+                <>
+                  <div className="rounded-md shadow">
+                    <Link href="/auth/register">
+                      <Button size="lg" className="w-full">
+                        Comenzar ahora
+                      </Button>
+                    </Link>
+                  </div>
+                  <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+                    <Link href="/auth/login">
+                      <Button variant="outline" size="lg" className="w-full">
+                        Iniciar sesión
+                      </Button>
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-md shadow">
+                  <Link href="/dashboard">
+                    <Button size="lg" className="w-full">
+                      Ir a mi espacio de estudio
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -125,23 +142,37 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
           <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
             <span className="block">¿Listo para comenzar?</span>
-            <span className="block text-primary-300">Regístrate hoy y mejora tu aprendizaje.</span>
+            <span className="block text-primary-300">
+              {isLoggedIn ? 'Sigue mejorando tu aprendizaje.' : 'Regístrate hoy y mejora tu aprendizaje.'}
+            </span>
           </h2>
           <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
-            <div className="inline-flex rounded-md shadow">
-              <Link href="/auth/register">
-                <Button size="lg" className="bg-white text-primary-600 hover:bg-gray-100">
-                  Comenzar ahora
-                </Button>
-              </Link>
-            </div>
-            <div className="ml-3 inline-flex rounded-md shadow">
-              <Link href="/auth/login">
-                <Button variant="outline" size="lg" className="border-white text-white hover:bg-primary-600">
-                  Iniciar sesión
-                </Button>
-              </Link>
-            </div>
+            {!isLoggedIn ? (
+              <>
+                <div className="inline-flex rounded-md shadow">
+                  <Link href="/auth/register">
+                    <Button size="lg" className="bg-white text-primary-600 hover:bg-gray-100">
+                      Comenzar ahora
+                    </Button>
+                  </Link>
+                </div>
+                <div className="ml-3 inline-flex rounded-md shadow">
+                  <Link href="/auth/login">
+                    <Button variant="outline" size="lg" className="border-white text-white hover:bg-primary-600">
+                      Iniciar sesión
+                    </Button>
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <div className="inline-flex rounded-md shadow">
+                <Link href="/dashboard">
+                  <Button size="lg" className="bg-white text-primary-600 hover:bg-gray-100">
+                    Mi espacio de estudio
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>

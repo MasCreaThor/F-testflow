@@ -39,7 +39,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-10">
-        <Header />
+        <Header inDashboard={true} />
       </div>
       
       <div className="flex flex-1">

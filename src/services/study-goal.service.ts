@@ -25,10 +25,10 @@ import {
           throw new Error('No hay token de acceso disponible');
         }
         
-        // Usamos el endpoint general y luego filtramos en el frontend
-        // En una implementación ideal, el backend tendría un endpoint específico para esto
-        const url = `${apiUrl}/study-goals?activeOnly=${activeOnly}`;
+        // Actualizar la URL para usar la nueva ruta
+        const url = `${apiUrl}/study-goals/user/goals?activeOnly=${activeOnly}`;
         
+        // Resto del código permanece igual...
         const response = await fetch(url, {
           method: 'GET',
           headers: {
@@ -65,9 +65,7 @@ import {
           throw new Error('Formato de respuesta inesperado');
         }
         
-        // En una implementación real, estos objetivos ya vendrían filtrados por el backend
-        // para mostrar solo los del usuario actual.
-        console.log(`Se obtuvieron ${responseData.length} objetivos de estudio`);
+        console.log(`Se obtuvieron ${responseData.length} objetivos de estudio del usuario`);
         return responseData;
       } catch (error) {
         console.error('Error en getMyStudyGoals:', error);

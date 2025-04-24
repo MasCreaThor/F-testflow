@@ -1,32 +1,23 @@
 'use client';
 
-import React, { useState, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import Sidebar from '../Sidebar/Sidebar';
 import Header from '../Header/Header';
 import Footer from '../Footer/Footer';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
+import { DashboardLayoutProvider, useDashboardLayout } from '@/contexts/DashboardLayoutContext';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 /**
- * Dashboard layout with sidebar for authenticated pages
+ * Inner component that uses the dashboard layout context
  */
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const DashboardLayoutInner: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const { isSidebarCollapsed, toggleSidebar, closeSidebar } = useDashboardLayout();
   const { loading } = useProtectedRoute();
-  
-  // Toggle sidebar for mobile
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-  
-  // Close sidebar
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-  
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -34,41 +25,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-10">
         <Header inDashboard={true} />
       </div>
-      
+
       <div className="flex flex-1">
         {/* Sidebar - Desktop */}
-        <div className="hidden lg:block w-64 flex-shrink-0">
-          <div className="h-full fixed w-64">
-            <Sidebar />
+        <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${
+          isSidebarCollapsed ? 'w-16' : 'w-64'
+        }`}>
+          <div className={`h-full fixed transition-all duration-300 ${
+            isSidebarCollapsed ? 'w-16' : 'w-64'
+          }`}>
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
           </div>
         </div>
-        
-        {/* Sidebar - Mobile */}
-        {isSidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 flex">
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-gray-600 bg-opacity-75"
-              aria-hidden="true"
-              onClick={closeSidebar}
-            ></div>
-            
-            {/* Sidebar */}
-            <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white dark:bg-gray-900">
-              <Sidebar isMobile onCloseMobile={closeSidebar} />
-            </div>
-          </div>
-        )}
-        
+
         {/* Main Content */}
-        <div className="flex-1 lg:pl-64">
+        <div className={`flex-1 transition-all duration-300 ${
+          isSidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
+        }`}>
           <div className="py-6">
             {/* Toggle Sidebar Button - Mobile */}
             <div className="px-4 sm:px-6 lg:px-8 mb-4 lg:hidden">
@@ -78,7 +58,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 onClick={toggleSidebar}
               >
                 <span className="sr-only">
-                  {isSidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
+                  {isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
                 </span>
                 <svg
                   className="h-6 w-6"
@@ -97,7 +77,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </svg>
               </button>
             </div>
-            
+
             {/* Content */}
             <div className="mx-auto px-4 sm:px-6 lg:px-8">
               {children}
@@ -105,10 +85,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Footer */}
       <Footer />
     </div>
+  );
+};
+
+/**
+ * Dashboard layout with sidebar for authenticated pages
+ * Wraps children with the DashboardLayoutProvider
+ */
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  return (
+    <DashboardLayoutProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </DashboardLayoutProvider>
   );
 };
 

@@ -1,11 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
+  /**
+   * Whether the sidebar is collapsed
+   */
+  isCollapsed?: boolean;
+  /**
+   * Function to toggle sidebar collapse
+   */
+  onToggle?: () => void;
   /**
    * Whether the sidebar is mobile
    */
@@ -20,31 +28,24 @@ interface SidebarProps {
  * Sidebar component for dashboard layout with collapsible functionality
  */
 const Sidebar: React.FC<SidebarProps> = ({ 
+  isCollapsed = false,
+  onToggle,
   isMobile = false,
   onCloseMobile 
 }) => {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   
-  // Check local storage for saved collapse state on component mount
-  useEffect(() => {
-    if (!isMobile) { // Only for desktop
-      const savedCollapseState = localStorage.getItem('sidebarCollapsed');
-      if (savedCollapseState !== null) {
-        setIsCollapsed(savedCollapseState === 'true');
-      }
+  const handleLogout = async () => {
+    await logout();
+    if (onCloseMobile) {
+      onCloseMobile();
     }
-  }, [isMobile]);
+  };
   
-  // Save collapse state to local storage
-  const toggleSidebar = () => {
-    const newState = !isCollapsed;
-    setIsCollapsed(newState);
-    
-    // Save to local storage
-    if (!isMobile) {
-      localStorage.setItem('sidebarCollapsed', String(newState));
+  const handleNavigation = () => {
+    if (onCloseMobile) {
+      onCloseMobile();
     }
   };
   
@@ -78,25 +79,21 @@ const Sidebar: React.FC<SidebarProps> = ({
         </svg>
       ),
     },
+    {
+      name: 'Estadísticas',
+      href: '/statistics',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+        </svg>
+      ),
+    },
   ];
-  
-  const handleLogout = async () => {
-    await logout();
-    if (onCloseMobile) {
-      onCloseMobile();
-    }
-  };
-  
-  const handleNavigation = () => {
-    if (onCloseMobile) {
-      onCloseMobile();
-    }
-  };
   
   return (
     <div 
       className={`bg-white dark:bg-gray-900 h-full transition-all duration-300 ${
-        isMobile ? 'w-full' : isCollapsed ? 'w-16' : 'w-64'
+        isMobile ? 'w-full' : 'w-full'
       }`}
     >
       <div className="flex flex-col h-full">
@@ -108,14 +105,12 @@ const Sidebar: React.FC<SidebarProps> = ({
               className="flex items-center space-x-2"
               onClick={handleNavigation}
             >
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">😎</span>
-                </div>
+              <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">TF</span>
               </div>
               {!isCollapsed && (
                 <span className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Estudiante
+                  TestFlow
                 </span>
               )}
             </Link>
@@ -130,9 +125,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
           
           {/* Toggle Button - Only visible on desktop */}
-          {!isMobile && (
+          {!isMobile && onToggle && (
             <button
-              onClick={toggleSidebar}
+              onClick={onToggle}
               className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none"
               aria-label={isCollapsed ? "Expandir menú" : "Contraer menú"}
             >
@@ -195,29 +190,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             {!isCollapsed && "Cerrar Sesión"}
           </button>
         </div>
-        
-        {/* Collapse Toggle Button - Fixed at Bottom for Easy Access */}
-        {!isMobile && (
-          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-            <button 
-              onClick={toggleSidebar}
-              className="flex items-center justify-center w-full text-sm text-gray-500 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
-            >
-              {isCollapsed ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Contraer menú</span>
-                </div>
-              )}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
